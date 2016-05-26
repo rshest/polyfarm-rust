@@ -1,6 +1,7 @@
 [package]
 name = "polyfarm"
 version = "0.1.0"
-authors = ["Ruslan Shestopalyuk <rshestopalyuk@slb.com>"]
+authors = ["Ruslan Shestopalyuk"]
 
 [dependencies]
+getopts = "0.2"
