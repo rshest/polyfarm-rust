@@ -5,3 +5,4 @@ authors = ["Ruslan Shestopalyuk"]
 
 [dependencies]
 getopts = "0.2"
+num = "0.1"

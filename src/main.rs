@@ -1,13 +1,18 @@
 extern crate getopts;
-use getopts::Options;
+extern crate num;
+
+mod polyomino;
 
 use std::env;
 use std::io::{BufReader};
 use std::io::prelude::*;
 use std::fs::File;
+use getopts::Options;
+
+const DEFAULT_SHAPES_FILE: &'static str = "data/pentomino.txt";
 
 fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} FILE [options]", program);
+    let brief = format!("Usage: {} SHAPES_FILE [options]", program);
     print!("{}", opts.usage(&brief));
 }
 
@@ -22,11 +27,16 @@ fn main() {
         Err(f) => { panic!(f.to_string()) }
     };
 
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
+
     let shapes_file = if !matches.free.is_empty() {
         matches.free[0].clone()
     } else {
-        print_usage(&program, opts);
-        return;
+        println!("Shapes file not specified, using default: {}", DEFAULT_SHAPES_FILE);
+        String::from(DEFAULT_SHAPES_FILE)
     };
 
     let f = File::open(shapes_file).unwrap();
@@ -34,5 +44,5 @@ fn main() {
         println!("{}", line.unwrap());
     }
 
-    println!("Hello, world!");
+
 }
