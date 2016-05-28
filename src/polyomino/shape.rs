@@ -1,5 +1,9 @@
+use std::cmp;
+use std::f64;
 use super::vec2::Vec2i;
+use std::f64::consts::{PI};
 
+//  neighbor offsets, horizontal/vertical
 const OFFS: [[i32; 2]; 4] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 pub enum Rotation {
@@ -117,7 +121,8 @@ impl Shape {
         });
         Shape::new(squares.collect())
     }
-
+    
+    //  returns set of possible shape transformed variants
     pub fn variants(&self, mirrored: bool, rotated: bool) -> Vec<Shape> {
         let mut res = vec![];
         {
@@ -150,6 +155,33 @@ impl Shape {
         x >= 0 && y >= 0 &&
         x < self.width && y < self.height &&
         self.mask[(x + y * self.width) as usize]
+    }
+    
+    //  very approximate "length" of the shape
+    fn estimate_len(&self) -> f64 {
+        cmp::max(self.width, self.height) as f64
+    }
+    
+    //  measurement of "distance" from the shape to the circle 
+    //  with given radius and centered at (0, 0)
+    fn dist_to_circle(&self, radius: f64, pos: &Vec2i) -> f64 {
+        self.squares.iter().map(|p| {
+            let cp = Vec2i {x:pos.x + p.x, y:pos.y + p.y};
+            let dr = cp.len() - radius;
+            dr*dr
+        }).fold(0.0, |sum, i| sum + i)
+    }
+    
+    //  returns the range of angles (from (0,0)) that this shape spans
+    fn angle_range(&self, pos: &Vec2i) -> (f64, f64) {
+        self.squares.iter()
+        .fold((f64::INFINITY, -f64::NEG_INFINITY), |(amin, amax), p| {
+            let x = (pos.x + p.x) as f64;
+            let y = (pos.y + p.y) as f64;
+            let mut ang = y.atan2(x);
+            if ang < 0.0 { ang += 2.0*PI; }
+            (amin.min(ang), amax.max(ang))
+        })
     }
 }
 

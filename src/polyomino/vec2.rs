@@ -11,9 +11,15 @@ pub struct Vec2<T> {
 }
 
 // implementation
-impl<T> Vec2<T> {
+impl<T: Num> Vec2<T> {
     pub fn new(x: T, y: T) -> Vec2<T> {
         Vec2 { x: x, y: y }
+    } 
+}
+
+impl Vec2<i32> {
+    pub fn len(&self) -> f64 {
+        ((self.x*self.x + self.y*self.y) as f64).sqrt()
     }
 }
 
