@@ -1,38 +1,116 @@
 use super::vec2::Vec2i;
 
 const OFFS: [[i32; 2]; 4] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
 
-enum Rotation {
+pub enum Rotation {
     None = 0, // no rotation
     CW90 = 1, // 90 degrees clockwise
     CW180 = 2, // 180 degrees clockwise
     CW270 = 3, // 270 degrees clockwise
 }
 
-enum Overlap {
-    Overlap, // have a common square
-    Border, // have a common edge
-    Disjoint, // neither a common square nor edge
-}
-
+// Polyomino shape
 pub struct Shape {
     pub squares: Vec<Vec2i>,
-    pub width: u32,
-    pub height: u32,
+    pub width: i32,
+    pub height: i32,
+
+    mask: Vec<bool>,
+    boundary: Vec<Vec2i>,
 }
 
 impl Shape {
-    fn parse(input: &str) -> Shape {
-        let squares = input.lines().enumerate();/*.flat_map(|(row, line)| {
-            [[1, row]]
-        }).collect();*/
-        println!("squares: {:?}", squares.collect());
+    fn new(squares: Vec<Vec2i>) -> Shape {
+        let (w, h) = Shape::extents(&squares);
+        let mask = Shape::build_mask(&squares);
+        let boundary = Shape::build_boundary(&squares, &mask);
+        let mut squares = squares.clone();
+        squares.sort();
         Shape {
-            width: 4,
-            height: 4,
-            squares: vec![],
+            width: w,
+            height: h,
+            squares: squares,
+            mask: mask,
+            boundary: boundary,
         }
+    }
+
+    // finds (width, height) of the square coordinate list
+    fn extents(squares: &Vec<Vec2i>) -> (i32, i32) {
+        let w = squares.iter().map(|v| v.x).max().unwrap();
+        let h = squares.iter().map(|v| v.y).max().unwrap();
+        (w + 1, h + 1)
+    }
+
+    // builds a boolean mask (bitmap) for a square list
+    fn build_mask(squares: &Vec<Vec2i>) -> Vec<bool> {
+        let (w, h) = Shape::extents(squares);
+        let mut res = vec![false; (w*h) as usize];
+        for p in squares {
+            let idx = p.x + (p.y * (w as i32));
+            res[idx as usize] = true;
+        }
+        res
+    }
+
+    // creates a list of boundary square coordinates
+    fn build_boundary(squares: &Vec<Vec2i>, mask: &Vec<bool>) -> Vec<Vec2i> {
+        let (w, h) = Shape::extents(squares);
+        let mut res = vec![];
+        for sq in squares {
+            for offs in OFFS.iter() {
+                let x = sq.x + offs[0];
+                let y = sq.y + offs[1];
+                if x >= 0 && y >= 0 && x < w && y < h && !mask[(x + y * w) as usize] {
+                    res.push(Vec2i { x: x, y: y });
+                }
+            }
+        }
+        res.sort();
+        res
+    }
+
+    // parses a shape from string representation (newline separated)
+    fn parse(input: &str) -> Shape {
+        let squares = input.lines()
+                           .enumerate()
+                           .flat_map(|(j, line)| {
+                               line.chars()
+                                   .enumerate()
+                                   .filter(|&(_, c)| c != ' ')
+                                   .map(move |(i, _)| {
+                                       Vec2i {
+                                           x: i as i32,
+                                           y: j as i32,
+                                       }
+                                   })
+                           })
+                           .collect();
+        Shape::new(squares)
+    }
+
+    fn mirrored(&self) -> Shape {
+        let squares = self.squares.iter().map(|s| {
+            Vec2i {
+                x: self.width - s.x - 1,
+                y: s.y,
+            }
+        });
+        Shape::new(squares.collect())
+    }
+
+    fn rotated(&self, rot: Rotation) -> Shape {
+        let (w, h) = (self.width, self.height);
+        let squares = self.squares.iter().map(|s| {
+            let (x, y) = match rot {
+                Rotation::CW90 => (h - s.y - 1, s.x),
+                Rotation::CW180 => (w - s.x - 1, h - s.y - 1),
+                Rotation::CW270 => (s.y, w - s.x - 1),
+                Rotation::None => (s.x, s.y),
+            };
+            Vec2i { x: x, y: y }
+        });
+        Shape::new(squares.collect())
     }
 }
 
@@ -42,24 +120,38 @@ mod tests {
 
     #[test]
     fn test_shape_parse1() {
-        let shape = "   \n*\n*** \n*\n";
-
+        let shape = "*\n*** \n*\n";
         let shape = Shape::parse(shape);
-        assert_eq!(shape.squares, vec![[1, 1], [1, 2], [2, 2], [3, 2], [1, 3]]);
-        assert_eq!((shape.width, shape.height), (4, 4));
+        assert_eq!(shape.squares, vec![[0, 0], [0, 1], [0, 2], [1, 1], [2, 1]]);
+        assert_eq!((shape.width, shape.height), (3, 3));
     }
 
+    #[test]
     fn test_shape_parse2() {
-        let shape = "   *\n*** \n*\n";
+        let shape = "   *\n****\n";
+        let shape = Shape::parse(shape);
+        assert_eq!(shape.squares, vec![[0, 1], [1, 1], [2, 1], [3, 0], [3, 1]]);
+        assert_eq!((shape.width, shape.height), (4, 2));
     }
 
     #[test]
     fn test_shape_mirrored() {
-        let shape = "* **\n*\n";
+        let shape = "* **\n   *\n";
+        let shape = Shape::parse(shape);
+        assert_eq!(shape.mirrored().squares,
+                   vec![[0, 0], [0, 1], [1, 0], [3, 0]]);
+        assert_eq!((shape.width, shape.height), (4, 2));
     }
 
     #[test]
     fn test_shape_rotated() {
-        let shape = "****\n*\n";
+        let shape = "****\n   *\n";
+        let shape = Shape::parse(shape);
+        assert_eq!(shape.rotated(Rotation::CW90).squares,
+                   vec![[0, 3], [1, 0], [1, 1], [1, 2], [1, 3]]);
+        assert_eq!(shape.rotated(Rotation::CW180).squares,
+                   vec![[0, 0], [0, 1], [1, 1], [2, 1], [3, 1]]);
+        assert_eq!(shape.rotated(Rotation::CW270).squares,
+                   vec![[0, 0], [0, 1], [0, 2], [0, 3], [1, 0]]);
     }
 }

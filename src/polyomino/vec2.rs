@@ -1,23 +1,23 @@
 use std::ops::{Add, Sub};
-use num::{Num};
+use num::Num;
 
 pub type Vec2i = Vec2<i32>;
 pub type Vec2f = Vec2<f64>;
 
-#[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Ord, Eq, Debug)]
 pub struct Vec2<T> {
     pub x: T,
-    pub y: T
+    pub y: T,
 }
 
-//  implementation
+// implementation
 impl<T> Vec2<T> {
     pub fn new(x: T, y: T) -> Vec2<T> {
-        Vec2{x: x, y: y}
+        Vec2 { x: x, y: y }
     }
 }
 
-//  compare with [x, y]
+// compare with [x, y]
 impl<T: Num> PartialEq<[T; 2]> for Vec2<T> {
     #[inline]
     fn eq(&self, rhs: &[T; 2]) -> bool {
@@ -25,7 +25,7 @@ impl<T: Num> PartialEq<[T; 2]> for Vec2<T> {
     }
 }
 
-//  operator +
+// operator +
 impl<T: Num> Add for Vec2<T> {
     type Output = Self;
 
@@ -35,7 +35,7 @@ impl<T: Num> Add for Vec2<T> {
     }
 }
 
-//  operator -
+// operator -
 impl<T: Num> Sub for Vec2<T> {
     type Output = Self;
 
@@ -51,12 +51,10 @@ mod tests {
 
     #[test]
     fn test_arithmetics() {
-        let a = Vec2i{x: -1, y: 5};
-        let b = Vec2i{x: 3, y: -2};
+        let a = Vec2i { x: -1, y: 5 };
+        let b = Vec2i { x: 3, y: -2 };
 
-        assert_eq!(Vec2i{x: 2, y: 3}, a + b);
-        assert_eq!(Vec2i{x: 4, y: -7}, b - a);
+        assert_eq!(Vec2i { x: 2, y: 3 }, a + b);
+        assert_eq!(Vec2i { x: 4, y: -7 }, b - a);
     }
 }
-
-
