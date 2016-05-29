@@ -67,7 +67,7 @@ fn main() {
     };
 
     let seed = get_num("s", "42");
-    let gen_size = get_num("g", "10");
+    let gen_size = get_num("g", "100");
     let max_iter = get_num("n", "1");
     let cell_side = get_num("c", "10");    
     

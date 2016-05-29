@@ -2,8 +2,11 @@ use rand::{Rng, SeedableRng, StdRng};
 use std::f64::consts::{PI};
 use std::fs::File;
 use std::io::prelude::*;
+use std::cmp;
 
 use polyomino::layout::{Layout, Bundle, Position};
+
+const DISPLAY_ENTRIES : usize = 100;
 
 pub struct Farm<'a> {
      bundle : &'a Bundle,
@@ -48,6 +51,7 @@ impl<'a> Farm<'a> {
             let mut layout = &mut gen[cur_gen][k];
             layout.shuffle(&mut self.rng);
             layout.arrange_circle(radius);
+            layout.center();
             scores.push(Score{
                 layout: k as u32,
                 score: layout.score()
@@ -58,16 +62,29 @@ impl<'a> Farm<'a> {
         loop {
             scores.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
             
-            self.dump_generation(&scores, &gen[cur_gen]);
+            self.dump_layouts(&scores, &gen[cur_gen]);
             
             it += 1;
             if it >= self.max_iter { break; }
         }
     }
     
-    fn dump_generation(&self, scores: &Vec<Score>, gen : &Vec<Layout>) {
+    fn dump_layouts(&self, scores: &Vec<Score>, gen : &Vec<Layout>) {
         let mut buffer = File::create(&self.out_file).unwrap();
         writeln!(buffer, "<div>");
+        
+        let ndisp = cmp::min(DISPLAY_ENTRIES, self.gen_size);
+        let mut k = 0;
+        let mut cur_pos = 0;
+        while cur_pos < ndisp && k < self.gen_size {
+            let layout = &gen[scores[k].layout as usize];
+            let is_dupe = scores.iter().take(k).any(|s| {
+                layout == &gen[s.layout as usize]
+            });
+            k += 1;
+            if is_dupe { continue; }
+            cur_pos += 1;
+        }
         
         writeln!(buffer, "</div>");
     }

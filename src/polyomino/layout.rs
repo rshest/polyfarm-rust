@@ -1,4 +1,6 @@
 use std::f64;
+use std::i32;
+use std::cmp;
 use super::vec2::Vec2i;
 use super::shape::{Shape, OFFS};
 use super::util::*;
@@ -18,7 +20,7 @@ pub enum Overlap {
 pub type Bundle = Vec<Vec<Shape>>;
 
 //  Polyomino "intance" (both geometrical and variation)
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Position {
     pub x : i32,
     pub y : i32,
@@ -30,6 +32,13 @@ pub struct Position {
 pub struct Layout<'a> {
     bundle : &'a Bundle,
     pub pos : Vec<Position>,
+}
+
+impl<'a> PartialEq<Layout<'a>> for Layout<'a> {
+    #[inline]
+    fn eq(&self, rhs: &Layout<'a>) -> bool {
+        self.pos.iter().zip(&rhs.pos).all(|(p1, p2)| p1 == p2)
+    }
 }
 
 pub fn parse_bundle(input: &str, mirrored: bool, rotated: bool) -> Bundle {
@@ -205,6 +214,25 @@ impl<'a> Layout<'a> {
     
     pub fn score(&self) -> f64 {
         0.0
+    }
+    
+    pub fn bounds(&self) -> (Vec2i, Vec2i) {
+        let start = (Vec2i{x:i32::MAX, y:i32::MAX}, Vec2i{x:i32::MIN, y:i32::MIN});
+        self.pos.iter().fold(start, |(lt, rb), pos| {
+            let sh = self.shape_by_pos(pos);
+            (Vec2i{x: cmp::min(lt.x, pos.x), y: cmp::min(lt.y, pos.y)},
+             Vec2i{x: cmp::max(rb.x, pos.x + sh.width), 
+                   y: cmp::max(rb.y, pos.y + sh.height)})
+        })
+    }
+    
+    pub fn center(&mut self) {
+        let (lt, rb) = self.bounds();
+        let cx = (rb.x + lt.x)/2;
+        let cy = (rb.y + lt.y)/2;
+        self.pos = self.pos.iter().map(|p| 
+            Position{x: p.x - cx, y: p.y - cy, ..*p}
+        ).collect();
     }
 }
 
