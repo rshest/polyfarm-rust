@@ -1,5 +1,4 @@
 pub mod layout;
-pub mod bundle;
 pub mod shape;
 pub mod svg;
 

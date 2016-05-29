@@ -4,7 +4,7 @@ use super::vec2::Vec2i;
 use std::f64::consts::{PI};
 
 //  neighbor offsets, horizontal/vertical
-const OFFS: [[i32; 2]; 4] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+pub const OFFS: [[i32; 2]; 4] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
 
 pub enum Rotation {
     None = 0, // no rotation
@@ -38,13 +38,7 @@ impl Shape {
         let boundary = Shape::build_boundary(&squares, &mask);
         let mut squares = squares.clone();
         squares.sort();
-        Shape {
-            width: w,
-            height: h,
-            squares: squares,
-            mask: mask,
-            boundary: boundary,
-        }
+        Shape { width: w, height: h, squares: squares, mask: mask, boundary: boundary, }
     }
 
     // finds (width, height) of the square coordinate list
@@ -151,7 +145,7 @@ impl Shape {
     }
 
     //  returns true if square at given coordinate is present
-    fn is_set(&self, x: i32, y: i32) -> bool {
+    pub fn is_set(&self, x: i32, y: i32) -> bool {
         x >= 0 && y >= 0 &&
         x < self.width && y < self.height &&
         self.mask[(x + y * self.width) as usize]

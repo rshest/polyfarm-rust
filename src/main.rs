@@ -9,7 +9,7 @@ use std::io::prelude::*;
 use std::fs::File;
 use getopts::Options;
 
-use polyomino::bundle::{Bundle};
+use polyomino::layout::{Bundle};
 
 const DEFAULT_SHAPES_FILE: &'static str = "data/pentomino.txt";
 
@@ -23,6 +23,7 @@ fn main() {
     opts.optflag("h", "help", "print this help text");
     opts.optflag("m", "no-mirror", "don't mirror the shapes");
     opts.optflag("r", "no-rotation", "don't rotate the shapes");
+    opts.optopt("o", "output", "output HTML file path", "output.html");
 
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
@@ -50,6 +51,8 @@ fn main() {
     let mirrored = !matches.opt_present("m");
     let rotated = !matches.opt_present("r");
     let bundle = Bundle::parse(&contents, mirrored, rotated);
+
+    let out_file = matches.opt_str("o");
     for b in bundle.variants {
         println!("{}", b.len())
     }    
