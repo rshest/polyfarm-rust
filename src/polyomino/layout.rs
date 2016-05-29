@@ -1,5 +1,7 @@
+use std::f64;
 use super::vec2::Vec2i;
 use super::shape::{Shape, OFFS};
+use rand::{Rng};
 
 const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
 
@@ -11,30 +13,25 @@ pub enum Overlap {
 }
 
 // A bundle(set) of polyomino shapes
-pub struct Bundle {
-    pub variants: Vec<Vec<Shape>>
-}
+pub type Bundle = Vec<Vec<Shape>>;
+
 
 pub struct Position {
-    x : i32,
-    y : i32,
-    shape : u16,    //  shape index
-    var : u16       //  shape variant index
+    pub x : i32,
+    pub y : i32,
+    pub shape : u16,    //  shape index
+    pub var : u16       //  shape variant index
 }
 
 pub struct Layout<'a> {
     bundle : &'a Bundle,
-    pos : Vec<Position>,
+    pub pos : Vec<Position>,
 }
 
-impl Bundle {
-    pub fn parse(input: &str, mirrored: bool, rotated: bool) -> Bundle {
-        Bundle {
-            variants: input.split("\n\n")
-            .map(|s| Shape::parse(s).variants(mirrored, rotated))
-            .collect()
-        }
-    }
+pub fn parse_bundle(input: &str, mirrored: bool, rotated: bool) -> Bundle {
+    input.split("\n\n")
+    .map(|s| Shape::parse(s).variants(mirrored, rotated))
+    .collect()
 }
 
 impl<'a> Layout<'a> {
@@ -90,7 +87,57 @@ impl<'a> Layout<'a> {
         }
         Overlap::Disjoint
     }
-
+    
+    //  finds a "best fit" variation/position of a shape 
+    //  (according to a fit function, minimizing its output), 
+    //  so that it is bordered with the anchor shape
+    fn best_fit<F>(anchor_shape: &Shape, anchor_pos: &Vec2i, 
+        variants: &Vec<Shape>, fit: F) -> (u16, Vec2i) 
+        where F : Fn(&Vec2i, &Shape) -> f64
+    {
+        let mut min_d = f64::MAX;
+        let mut res = (0, Vec2i{x: 0, y: 0});
+        for (i, ref shape) in variants.iter().enumerate() {
+            for bpos in anchor_shape.boundary.iter() {
+                for cpos in shape.squares.iter() {
+                    let p = Vec2i{
+                        x: anchor_pos.x + bpos.x - cpos.x,
+                        y: anchor_pos.y + bpos.y - cpos.y,
+                    };
+                    let d = fit(&p, &shape);
+                    if d < min_d {
+                        min_d = d;
+                        res = (i as u16, p)
+                    }
+                }
+            }
+        }
+        res
+    }
+    
+    //  constructor
+    pub fn new(bundle : &Bundle) -> Layout {
+        Layout {
+            bundle: bundle,
+            pos: (0..bundle.len()).map(|i| Position {
+                x: 0, y: 0, shape: i as u16, var: 0
+            }).collect()
+        }
+    }
+    
+    //  shuffles shape order
+    pub fn shuffle<T: Rng>(&mut self, rng : &mut T) {
+        for i in 0..self.bundle.len() {
+            let j = rng.gen_range(0, i + 1);
+            let tmp = self.pos[i].shape;
+            self.pos[i].shape = self.pos[j].shape;
+            self.pos[j].shape = tmp;
+        }
+    }
+    
+    pub fn arrange_circle(&mut self) {
+        
+    }
 }
 
 #[cfg(test)]
@@ -142,6 +189,43 @@ mod tests {
 
         assert_eq!(2, Layout::distance(&shape2, &shape3,
             &Vec2i{x: 0, y: -4}, &Vec2i{x: 1, y: 1}));     
+    }
+    
+    #[test]
+    fn test_shape_dist2() {
+        let shape1 = "OOOO\nO\n";
+        let shape1 = Shape::parse(shape1);
+        
+        let shape2 = "O\nO\nO\nO\nO\n";
+        let shape2 = Shape::parse(shape2);
+        
+        assert_eq!(0, Layout::distance(&shape1, &shape2,
+            &Vec2i{x: 0, y: 1}, &Vec2i{x: 3, y: 2}));     
+        
+        assert_eq!(-1, Layout::distance(&shape1, &shape2,
+            &Vec2i{x: 0, y: 1}, &Vec2i{x: 0, y: 2}));    
+    }
+    
+    #[test]
+    fn test_best_fit() {
+        let shape1 = "OOOO\nO\n";
+        let shape1 = Shape::parse(shape1);
+        
+        let shape2 = "OOOOO\n";
+        let shape2 = Shape::parse(shape2);
+        
+        let variants = shape2.variants(true, true);
+        
+        let pos1 = Vec2i{ x: 0, y: 1 };
+        let res = Layout::best_fit(&shape1, &pos1, 
+            &variants, |pos, shape| {
+                let d = Layout::distance(&shape1, &shape, &pos1, &pos);
+                if d != 0 {return 1000.0}
+                (-(pos.x + shape.width)) as f64
+            }); 
+        
+        assert_eq!(2, variants.len());
+        assert_eq!((1, Vec2i{ x: 4, y: 1 }), res);
     }
     
 }

@@ -19,8 +19,8 @@ pub struct Shape {
     pub width: i32,
     pub height: i32,
 
+    pub boundary: Vec<Vec2i>,
     mask: Vec<bool>,
-    boundary: Vec<Vec2i>,
 }
 
 // compare with [x, y]
@@ -68,12 +68,14 @@ impl Shape {
                 let x = sq.x + offs[0];
                 let y = sq.y + offs[1];
                 let in_area = x >= 0 && y >= 0 && x < w && y < h;
-                if in_area && !mask[(x + y * w) as usize] {
+                let is_set = in_area && mask[(x + y * w) as usize];
+                if !is_set {
                     res.push(Vec2i { x: x, y: y });
                 }
             }
         }
         res.sort();
+        res.dedup();
         res
     }
 
@@ -195,6 +197,12 @@ mod tests {
         assert!(!shape.is_set(1, 0));
         assert!(!shape.is_set(5, 10));
         assert!(!shape.is_set(-1, 0));
+        
+        assert_eq!(shape.boundary, 
+            vec![[-1, 0], [-1, 1], [-1, 2],
+                [0, -1], [0, 3], [1, 0], [1, 2],
+                [2, 0], [2, 2], [3, 1]]);
+        
     }
 
     #[test]
