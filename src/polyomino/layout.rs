@@ -17,7 +17,8 @@ pub enum Overlap {
 // A bundle(set) of polyomino shapes
 pub type Bundle = Vec<Vec<Shape>>;
 
-
+//  Polyomino "intance" (both geometrical and variation)
+#[derive(Clone)]
 pub struct Position {
     pub x : i32,
     pub y : i32,
@@ -25,6 +26,7 @@ pub struct Position {
     pub var : u16       //  shape variant index
 }
 
+#[derive(Clone)]
 pub struct Layout<'a> {
     bundle : &'a Bundle,
     pub pos : Vec<Position>,
@@ -39,6 +41,10 @@ pub fn parse_bundle(input: &str, mirrored: bool, rotated: bool) -> Bundle {
 impl Position {
     fn p(&self) -> Vec2i {
         Vec2i{x: self.x, y: self.y}
+    }
+    
+    fn zero() -> Position {
+        Position{x: 0, y: 0, shape: 0, var: 0}
     }
 }
 
@@ -128,7 +134,7 @@ impl<'a> Layout<'a> {
         Layout {
             bundle: bundle,
             pos: (0..bundle.len()).map(|i| Position {
-                x: 0, y: 0, shape: i as u16, var: 0
+                shape: i as u16, ..Position::zero()
             }).collect()
         }
     }
@@ -195,6 +201,10 @@ impl<'a> Layout<'a> {
             }
             self.pos[i] = Position{x: pos.x, y: pos.y, var: var_idx, shape: shape_idx};
         }
+    }
+    
+    pub fn score(&self) -> f64 {
+        0.0
     }
 }
 

@@ -26,6 +26,10 @@ fn main() {
     opts.optflag("r", "no-rotation", "don't rotate the shapes");
     opts.optopt("o", "output", "output HTML file path", "FILE");
     opts.optopt("s", "seed", "random seed", "NUMBER");
+    opts.optopt("g", "gen-size", "generation size", "NUMBER");
+    opts.optopt("n", "max-iter", "maximum iteration", "NUMBER");
+    opts.optopt("c", "cell-side", "SVG cell side, pixels", "NUMBER");
+    
 
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
@@ -52,13 +56,25 @@ fn main() {
     
     let mirrored = !matches.opt_present("m");
     let rotated = !matches.opt_present("r");
+        
     let out_file = matches.opt_str("o")
         .unwrap_or_else(|| String::from("output.html"));
-    let seed = matches.opt_str("s")
-        .unwrap_or_else(|| String::from("42")).parse::<u64>().unwrap();
+    
+    let get_num = |name, default| {
+        matches.opt_str(name)
+        .unwrap_or_else(|| String::from(default))
+        .parse::<u32>().unwrap()
+    };
+
+    let seed = get_num("s", "42");
+    let gen_size = get_num("g", "10");
+    let max_iter = get_num("n", "1");
+    let cell_side = get_num("c", "10");    
+    
+    println!("gen_size: {}, seed: {}, max_iter: {}, cell_side: {}, output file: {}", 
+        gen_size, seed, max_iter, cell_side, out_file);   
     
     let bundle = parse_bundle(&contents, mirrored, rotated);
-    
-    let mut farm = Farm::new(&bundle, seed, &out_file);
+    let mut farm = Farm::new(&bundle, &out_file, seed, gen_size, max_iter, cell_side);
     farm.grind();
 }
