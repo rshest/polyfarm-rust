@@ -1,9 +1,11 @@
 use std::f64;
 use super::vec2::Vec2i;
 use super::shape::{Shape, OFFS};
+use super::util::*;
 use rand::{Rng};
 
 const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+const MAX_DIST : f64 = 1000.0;
 
 #[derive(PartialEq, Debug)]
 pub enum Overlap {
@@ -32,6 +34,12 @@ pub fn parse_bundle(input: &str, mirrored: bool, rotated: bool) -> Bundle {
     input.split("\n\n")
     .map(|s| Shape::parse(s).variants(mirrored, rotated))
     .collect()
+}
+
+impl Position {
+    fn p(&self) -> Vec2i {
+        Vec2i{x: self.x, y: self.y}
+    }
 }
 
 impl<'a> Layout<'a> {
@@ -135,8 +143,58 @@ impl<'a> Layout<'a> {
         }
     }
     
-    pub fn arrange_circle(&mut self) {
-        
+    //  get shape by position
+    pub fn shape_by_pos(&self, pos: &Position) -> &Shape {
+        &self.bundle[pos.shape as usize][pos.var as usize]
+    }
+       
+    //  lays out the chain of shapes along a circle with given radius,
+    //  picking positions/variants such that neighbor shapes bound each other    
+    pub fn arrange_circle(&mut self, radius : f64) {
+        let nshapes = self.pos.len();
+        for i in 0..nshapes {
+            let shape_idx = self.pos[i].shape;
+            let mut var_idx = 0;
+            let mut pos = Vec2i{x: 0, y: 0};
+            if i == 0 {
+                //  place the first shape at the right side of the circle
+                let sh = &self.bundle[shape_idx as usize][0];
+                pos.x = (radius - (sh.width as f64)*0.5).round() as i32;
+                pos.y = (-(sh.height as f64)*0.5).round() as i32;
+            } else {
+                let prev_pos = &self.pos[i - 1];
+                let prev_shape = self.shape_by_pos(prev_pos);
+                let (_, pang2) = prev_shape.angle_range(&prev_pos.p());
+                let k = i%nshapes;
+                let variants = &self.bundle[self.pos[k].shape as usize];
+                let res = Layout::best_fit(prev_shape, &prev_pos.p(), 
+                    variants, |pos, shape| {
+                    if i == nshapes {
+                        //  last shape should border with both neighbors
+                        let i1 = (i + 1)%nshapes;
+                        let next_pos = &self.pos[i1];
+                        let next_shape = self.shape_by_pos(next_pos);
+                        let d1 = Layout::distance(shape, next_shape, pos, &next_pos.p());
+                        if d1 != 0 { return MAX_DIST + (d1.abs() as f64) }
+                    }
+                    
+                    //  check for bordering with the previous
+                    let d = Layout::distance(shape, prev_shape, pos, &prev_pos.p());
+                    if d != 0 { return MAX_DIST }
+                    
+                    //  check that we are laying out in right direction
+                    let (_, ang2) = shape.angle_range(pos);
+                    if angle_greater(ang2, pang2) { return MAX_DIST }
+                    
+                    //  pick the one with minimum distance to the target circle
+                    let dist = shape.dist_to_circle(radius, pos);
+                    dist/ang2
+                });
+                var_idx = res.0;
+                pos = res.1;
+            }
+            self.pos[i] = Position{x: pos.x, y: pos.y, var: var_idx, shape: shape_idx};
+        }
     }
 }
 

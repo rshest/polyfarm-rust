@@ -1,4 +1,5 @@
 use rand::{Rng, SeedableRng, StdRng};
+use std::f64::consts::{PI};
 
 use polyomino::layout::{Layout, Bundle};
 
@@ -15,9 +16,13 @@ impl<'a> Farm<'a> {
         
         let mut layout = Layout::new(&bundle); 
         layout.shuffle(&mut rng);
+        
+        let radius = Farm::estimate_radius(&bundle);
+        layout.arrange_circle(radius);
     
         for b in layout.pos {
-            println!("{}", b.shape)
+            println!("{}, pos: {}, {}, var: {}", 
+                b.shape, b.x, b.y, b.var);
         }    
         
         Farm {
@@ -26,7 +31,14 @@ impl<'a> Farm<'a> {
         }
     }
     
+    
     pub fn grind(&mut self) {
     
+    }
+    
+    fn estimate_radius(bundle: &Bundle) -> f64 {
+        let len = bundle.iter().map(|v| v[0].estimate_len())
+            .fold(0.0, |sum, i| sum + i);
+        len/(2.0*PI)
     }
 }

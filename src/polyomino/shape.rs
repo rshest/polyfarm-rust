@@ -154,13 +154,13 @@ impl Shape {
     }
     
     //  very approximate "length" of the shape
-    fn estimate_len(&self) -> f64 {
+    pub fn estimate_len(&self) -> f64 {
         cmp::max(self.width, self.height) as f64
     }
     
     //  measurement of "distance" from the shape to the circle 
     //  with given radius and centered at (0, 0)
-    fn dist_to_circle(&self, radius: f64, pos: &Vec2i) -> f64 {
+    pub fn dist_to_circle(&self, radius: f64, pos: &Vec2i) -> f64 {
         self.squares.iter().map(|p| {
             let cp = Vec2i {x:pos.x + p.x, y:pos.y + p.y};
             let dr = cp.len() - radius;
@@ -169,9 +169,9 @@ impl Shape {
     }
     
     //  returns the range of angles (from (0,0)) that this shape spans
-    fn angle_range(&self, pos: &Vec2i) -> (f64, f64) {
+    pub fn angle_range(&self, pos: &Vec2i) -> (f64, f64) {
         self.squares.iter()
-        .fold((f64::INFINITY, -f64::NEG_INFINITY), |(amin, amax), p| {
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(amin, amax), p| {
             let x = (pos.x + p.x) as f64;
             let y = (pos.y + p.y) as f64;
             let mut ang = y.atan2(x);
