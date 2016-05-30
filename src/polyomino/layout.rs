@@ -211,10 +211,7 @@ impl<'a> Layout<'a> {
         }
     }
     
-    pub fn score(&self) -> f64 {
-        0.0
-    }
-    
+    //  returns layout bounds, (LeftTop, RightBottom)
     pub fn bounds(&self) -> (Vec2i, Vec2i) {
         let start = (Vec2i{x:i32::MAX, y:i32::MAX}, Vec2i{x:i32::MIN, y:i32::MIN});
         self.pos.iter().fold(start, |(lt, rb), pos| {
@@ -225,6 +222,7 @@ impl<'a> Layout<'a> {
         })
     }
     
+    //  centers the layout around (0, 0)
     pub fn center(&mut self) {
         let (lt, rb) = self.bounds();
         let cx = (rb.x + lt.x)/2;
@@ -234,23 +232,99 @@ impl<'a> Layout<'a> {
         ).collect();
     }
     
-    fn flood_fill<F>(cb: F) -> usize where F : FnMut(i32, i32) {
-        0
+    fn flood_fill<F>(&self, mut hit_fn: F) -> Option<usize> 
+        where F : FnMut(i32, i32) 
+    {
+        let (lt, rb) = self.bounds();
+        let w = rb.x - lt.x + 1;
+        let h = rb.y - lt.y + 1;
+        
+        // create the mask
+        let mut mask = vec![false; (w*h) as usize];
+        for p in &self.pos {
+            let shape = self.shape_by_pos(&p);
+            for sq in &shape.squares {
+                let x = p.x + sq.x - lt.x;
+                let y = p.y + sq.y - lt.y;
+                mask[(x + y*w) as usize] = true;
+            }
+        }
+        
+        //  compute the starting point
+        let mut sx = w/2;
+        let mut sy = h/2;
+        if mask[(sx + sy*w) as usize] {
+            for offs in COFFS.iter() {
+                let cx = sx + offs[0];
+                let cy = sy + offs[1];
+                if !mask[(cx + cy*w) as usize] {
+                    sx = cx; sy = cy;
+                    break;
+                }
+            }
+        }
+        
+        //  do the flood fill
+        let mut cellq = vec![];
+        cellq.push(Vec2i{x: sx, y: sy});
+        mask[(sx + sy*w) as usize] = true;
+        let mut nvisited = 0;
+            
+        loop {
+            let c = match cellq.pop() {
+                Some(p) => p,
+                None => break
+            };
+            hit_fn(c.x + lt.x, c.y + lt.y);
+            nvisited += 1;
+            for offs in COFFS.iter() {
+                let cx = c.x + offs[0];
+                let cy = c.y + offs[1];
+                if cx < 0 || cy < 0 || cx >= w || cy >= h { return None; }
+                let idx = (cx + cy*w) as usize;
+                if !mask[idx] {
+                    cellq.push(Vec2i{x: cx, y: cy});
+                    mask[idx] = true;
+                }
+            }
+        }    
+        Some(nvisited)
+    }
+    
+    //  computes "score" heuristic for the layout
+    pub fn score(&self) -> f64 {
+        let nshapes = self.pos.len();
+        match self.flood_fill(|_, _| {}) {
+            Some(n) => n as f64, // closed area (a donut)
+            None => {
+                //  non-closed area (a brezel)
+                let dist = self.pos.iter().enumerate().map(|(i, p)| {
+                    let sh = self.shape_by_pos(p);
+                    let p1 = &self.pos[(i + 1)%nshapes as usize];
+                    let sh1 = self.shape_by_pos(&p1);
+                    Layout::distance(sh, sh1, &p.p(), &p1.p()).abs() as f64
+                }).fold(0.0, |sum, i| sum + i);
+                -dist
+            }
+        }
     }
     
     pub fn extract_core(&self) -> Option<(Shape, Vec2i)> {
         let mut squares = vec![];
         let (mut cx, mut cy) = (i32::MAX, i32::MAX);
-        let num_visited = Layout::flood_fill(|x, y| {
+        let num_visited = self.flood_fill(|x, y| {
             cx = cmp::min(cx, x);
             cy = cmp::min(cy, y);
             squares.push(Vec2i{x: x, y: y});
         });
         
-        if num_visited > 0 {
-            squares = squares.iter().map(|p| Vec2i{x: p.x - cx, y: p.y - cy}).collect();
-            Some((Shape::new(squares), Vec2i{x: cx, y: cy}))
-        } else { None }
+        match num_visited {
+            Some(_) => {
+                squares = squares.iter().map(|p| Vec2i{x: p.x - cx, y: p.y - cy}).collect();
+                Some((Shape::new(squares), Vec2i{x: cx, y: cy}))            
+            },
+            None => None
+        }
     }
 }
 

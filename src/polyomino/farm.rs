@@ -4,10 +4,14 @@ use std::io::prelude::*;
 use std::cmp;
 use rand::{Rng, SeedableRng, StdRng};
 
-
-use polyomino::layout::{Layout, Bundle, Position};
+use polyomino::shape::{Shape};
+use polyomino::layout::{Layout, Bundle};
 
 const DISPLAY_ENTRIES : usize = 100;
+const COLORS : [&'static str; 12] = [
+    "8dd3c7", "ffffb3", "bebada", "fb8072", "80b1d3", "fdb462",
+    "b3de69", "fccde5", "d9d9d9", "bc80bd", "ccebc5", "ffed6f"
+];
 
 pub struct Farm<'a> {
      bundle : &'a Bundle,
@@ -41,7 +45,7 @@ impl<'a> Farm<'a> {
     fn estimate_radius(bundle: &Bundle) -> f64 {
         let len = bundle.iter().map(|v| v[0].estimate_len())
             .fold(0.0, |sum, i| sum + i);
-        len/(2.0*PI)
+        len/(2.0*PI) - 1.5
     }
         
     pub fn grind(&mut self) {        
@@ -78,8 +82,7 @@ impl<'a> Farm<'a> {
     
     fn dump_layouts(&self, scores: &Vec<Score>, gen : &Vec<Layout>) {
         let mut file = File::create(&self.out_file).unwrap();
-        writeln!(file, "<div>");
-        
+        writeln!(file, "<div>").unwrap();
         let ndisp = cmp::min(DISPLAY_ENTRIES, self.gen_size);
         let mut k = 0;
         let mut cur_pos = 0;
@@ -94,7 +97,7 @@ impl<'a> Farm<'a> {
             
             self.dump_svg(&mut file, layout);
         } 
-        writeln!(file, "</div>");
+        writeln!(file, "</div>").unwrap();
     }
     
     fn dump_svg(&self, file : &mut File, layout: &Layout) {
@@ -102,7 +105,7 @@ impl<'a> Farm<'a> {
         let w = (rb.x - lt.x + 1) as u32;
         let h = (rb.y - lt.y + 1) as u32;
 
-        let cs = self.cell_side;
+        let cs = self.cell_side as f64;
 
         //  svg header
         writeln!(file, r###"
@@ -110,7 +113,7 @@ impl<'a> Farm<'a> {
             xmlns:xlink="http://www.w3.org/1999/xlink"
             shape-rendering="crispEdges"
             width="{}" height="{}">
-        "###, w*cs, h*cs);
+        "###, (w as f64)*cs, (h as f64)*cs).unwrap();
 
         //  defs
         writeln!(file, r###"
@@ -121,7 +124,7 @@ impl<'a> Farm<'a> {
                 </g>
               </pattern>
             </defs>
-            "###, cs, cs, cs, cs, cs, cs);
+            "###, cs, cs, cs, cs, cs, cs).unwrap();
 
         //  styles
         let styles = r###"
@@ -130,28 +133,56 @@ impl<'a> Farm<'a> {
                 .core { fill: url(#squares) #fff; }
                 .caption { fill: #aae; font-family:Arial; font-size:25px; font-weight:bold;
                   dominant-baseline:central; text-anchor:middle; }
-                .shape { stroke:#224a22; stroke-width:1; opacity:1; }
+                .shape { stroke:#8888aa; stroke-width:1; opacity:1; }
               /* ]]> */
             </style>"###;
 
-        writeln!(file, "{}", styles);
+        writeln!(file, "{}", styles).unwrap();
 
+        //  the core (if present)
+        match layout.extract_core() {
+            Some((shape, pos)) => {
+                let x = (pos.x - lt.x) as f64;
+                let y = (pos.y - lt.y) as f64;
+                let dx = x*cs;
+                let dy = y*cs;
+                let path = self.gen_shape_path(&shape);
+                writeln!(file, 
+                    r###"<path class="core" transform="translate({},{})" d="{}"></path>"###,
+                    dx, dy, path).unwrap();
+            },
+            None => ()
+        }
+        
+        //  the shapes
         for pos in &layout.pos {
             let shape = layout.shape_by_pos(pos);
             let x = (pos.x - lt.x) as f64;
             let y = (pos.y - lt.y) as f64;
-            let dx = x*(cs as f64);
-            let dy = y*(cs as f64);
-
-
-        }
-
-        match layout.extract_core() {
-            Some((pos, shape)) => (),
-            None => ()
+            let dx = x*cs;
+            let dy = y*cs;
+            
+            let path = self.gen_shape_path(shape);
+            let color = COLORS[(pos.shape as usize)%COLORS.len()];
+            write!(file, r###"
+            <path fill="#{}" class="shape" transform="translate({},{})" d="{}"></path>"###, 
+                color, dx, dy, path).unwrap();
         }
 
         writeln!(file, r###"
-        </svg>"### );
+        </svg>"### ).unwrap();
+    }
+    
+    fn gen_shape_path(&self, shape: &Shape) -> String {
+        use std::fmt::Write;
+        let cs = self.cell_side as f64;
+        let mut res = String::new();
+        for sq in &shape.squares {
+            let (x, y) = ((sq.x as f64)*cs, (sq.y as f64)*cs);
+            let (x1, y1) = (x + cs, y + cs);
+            write!(&mut res, "M{},{} L{},{} L{},{} L{},{} Z ", 
+                x, y, x1, y, x1, y1, x, y1).unwrap();
+        }
+        res
     }
 }
