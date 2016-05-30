@@ -45,7 +45,7 @@ impl<'a> Farm<'a> {
     fn estimate_radius(bundle: &Bundle) -> f64 {
         let len = bundle.iter().map(|v| v[0].estimate_len())
             .fold(0.0, |sum, i| sum + i);
-        len/(2.0*PI) - 1.5
+        len/(2.0*PI)
     }
         
     pub fn grind(&mut self) {        
@@ -71,7 +71,7 @@ impl<'a> Farm<'a> {
         
         let mut it = 0;
         loop {
-            scores.sort_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+            scores.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
             
             self.dump_layouts(&scores, &gen[cur_gen]);
             
