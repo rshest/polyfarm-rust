@@ -1,7 +1,7 @@
 use std::cmp;
 use std::f64;
-use super::vec2::Vec2i;
 use std::f64::consts::{PI};
+use super::math::*;
 
 //  neighbor offsets, horizontal/vertical
 pub const OFFS: [[i32; 2]; 4] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
@@ -32,7 +32,7 @@ impl PartialEq for Shape {
 
 impl Shape {
     //  constructor
-    fn new(squares: Vec<Vec2i>) -> Shape {
+    pub fn new(squares: Vec<Vec2i>) -> Shape {
         let (w, h) = Shape::extents(&squares);
         let mask = Shape::build_mask(&squares);
         let boundary = Shape::build_boundary(&squares, &mask);

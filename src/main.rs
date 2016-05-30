@@ -30,7 +30,6 @@ fn main() {
     opts.optopt("n", "max-iter", "maximum iteration", "NUMBER");
     opts.optopt("c", "cell-side", "SVG cell side, pixels", "NUMBER");
     
-
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
     let matches = match opts.parse(&args[1..]) {
@@ -67,7 +66,7 @@ fn main() {
     };
 
     let seed = get_num("s", "42");
-    let gen_size = get_num("g", "100");
+    let gen_size = get_num("g", "1000");
     let max_iter = get_num("n", "1");
     let cell_side = get_num("c", "10");    
     

@@ -1,10 +1,9 @@
 use std::f64;
 use std::i32;
 use std::cmp;
-use super::vec2::Vec2i;
-use super::shape::{Shape, OFFS};
-use super::util::*;
 use rand::{Rng};
+use super::math::*;
+use super::shape::{Shape, OFFS};
 
 const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
 const MAX_DIST : f64 = 1000.0;
@@ -234,12 +233,31 @@ impl<'a> Layout<'a> {
             Position{x: p.x - cx, y: p.y - cy, ..*p}
         ).collect();
     }
+    
+    fn flood_fill<F>(cb: F) -> usize where F : FnMut(i32, i32) {
+        0
+    }
+    
+    pub fn extract_core(&self) -> Option<(Shape, Vec2i)> {
+        let mut squares = vec![];
+        let (mut cx, mut cy) = (i32::MAX, i32::MAX);
+        let num_visited = Layout::flood_fill(|x, y| {
+            cx = cmp::min(cx, x);
+            cy = cmp::min(cy, y);
+            squares.push(Vec2i{x: x, y: y});
+        });
+        
+        if num_visited > 0 {
+            squares = squares.iter().map(|p| Vec2i{x: p.x - cx, y: p.y - cy}).collect();
+            Some((Shape::new(squares), Vec2i{x: cx, y: cy}))
+        } else { None }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::vec2::Vec2i;
+    use super::super::math::*;
     use super::super::shape::Shape;
 
     #[test]
