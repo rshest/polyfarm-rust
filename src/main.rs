@@ -24,11 +24,15 @@ fn main() {
     opts.optflag("h", "help", "print this help text");
     opts.optflag("m", "no-mirror", "don't mirror the shapes");
     opts.optflag("r", "no-rotation", "don't rotate the shapes");
+    
     opts.optopt("o", "output", "output HTML file path", "FILE");
     opts.optopt("s", "seed", "random seed", "NUMBER");
     opts.optopt("g", "gen-size", "generation size", "NUMBER");
     opts.optopt("n", "max-iter", "maximum iteration", "NUMBER");
+    opts.optopt("e", "elites", "number of elites to preserve between generations", "NUMBER");
     opts.optopt("c", "cell-side", "SVG cell side, pixels", "NUMBER");
+    opts.optopt("p", "mut-percentage", "percentage of generation to mutate", "NUMBER%");
+    opts.optopt("a", "mut-attempts", "mutation attempts per gene", "NUMBER");
     
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
@@ -67,13 +71,18 @@ fn main() {
 
     let seed = get_num("s", "42");
     let gen_size = get_num("g", "1000");
-    let max_iter = get_num("n", "1");
+    let max_iter = get_num("n", "20");
     let cell_side = get_num("c", "10");    
-    
-    println!("gen_size: {}, seed: {}, max_iter: {}, cell_side: {}, output file: {}", 
-        gen_size, seed, max_iter, cell_side, out_file);   
+    let elites = get_num("e", "1");
+    let mut_percentage = get_num("p", "90");
+    let mut_attempts = get_num("a", "100");
+        
+    println!("gen_size: {}, seed: {}, max_iter: {}, elites: {},\
+        mut_percentage: {}, mut_attempts: {}, cell_side: {}, output file: {}", 
+        gen_size, seed, max_iter, elites, mut_percentage, mut_attempts, cell_side, out_file);   
     
     let bundle = parse_bundle(&contents, mirrored, rotated);
-    let mut farm = Farm::new(&bundle, &out_file, seed, gen_size, max_iter, cell_side);
+    let mut farm = Farm::new(&bundle, &out_file, seed, gen_size, max_iter, 
+        elites, mut_percentage, mut_attempts, cell_side);
     farm.grind();
 }

@@ -5,7 +5,7 @@ use rand::{Rng};
 use super::math::*;
 use super::shape::{Shape, OFFS};
 
-const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
+pub const COFFS: [[i32; 2]; 8] = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, -1], [1, 1], [-1, 1], [-1, -1]];
 const MAX_DIST : f64 = 1000.0;
 
 #[derive(PartialEq, Debug)]
@@ -29,7 +29,7 @@ pub struct Position {
 
 #[derive(Clone)]
 pub struct Layout<'a> {
-    bundle : &'a Bundle,
+    pub bundle : &'a Bundle,
     pub pos : Vec<Position>,
 }
 
