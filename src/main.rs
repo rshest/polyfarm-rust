@@ -70,8 +70,8 @@ fn main() {
     };
 
     let seed = get_num("s", "42");
-    let gen_size = get_num("g", "1000");
-    let max_iter = get_num("n", "20");
+    let gen_size = get_num("g", "10000");
+    let max_iter = get_num("n", "1000");
     let cell_side = get_num("c", "10");    
     let elites = get_num("e", "1");
     let mut_percentage = get_num("p", "90");

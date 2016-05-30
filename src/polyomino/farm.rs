@@ -118,11 +118,12 @@ impl<'a> Farm<'a> {
                 //  pick the source gene, favoring the ones with higher scores
                 let pick_size = self.gen_size;
                 let idx = self.rng.gen_range(0, pick_size*pick_size + 1);
-                let idx = (idx as f64).sqrt() as usize;
+                let idx = pick_size - (idx as f64).sqrt() as usize;
                 cur_gen[ii] = self.mutate_gene(&prev_gen[scores[idx].layout as usize]);
+                cur_gen[ii].center();
                 ii += 1;
             }
-            
+
             //  pad the rest with the fresh ones
             while ii < self.gen_size {
                 let mut layout = &mut cur_gen[ii];
@@ -177,7 +178,7 @@ impl<'a> Farm<'a> {
             let score = cl.score();
             if score > max_score {
                 max_score = score;
-                res = cl.clone();
+                res = cl;
             }
         }
         res
