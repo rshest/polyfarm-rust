@@ -146,10 +146,19 @@ impl<'a> Farm<'a> {
                 let y = (pos.y - lt.y) as f64;
                 let dx = x*cs;
                 let dy = y*cs;
+                
+                //  the core path
                 let path = self.gen_shape_path(&shape);
-                writeln!(file, 
-                    r###"<path class="core" transform="translate({},{})" d="{}"></path>"###,
+                write!(file, r###"
+                <path class="core" transform="translate({},{})" d="{}"></path>"###,
                     dx, dy, path).unwrap();
+                
+                //  the caption         
+                let tx = dx + (shape.width as f64)*cs*0.5;
+                let ty = dy + (shape.height as f64)*cs*0.5;
+                write!(file, r###"
+                <text class="caption" x="{}" y="{}">{}</text>"###,
+                    tx, ty, shape.squares.len()).unwrap();              
             },
             None => ()
         }
