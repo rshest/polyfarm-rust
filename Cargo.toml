@@ -7,3 +7,4 @@ authors = ["Ruslan Shestopalyuk"]
 getopts = "0.2"
 num = "0.1"
 rand = "0.3"
+time = "0.1"

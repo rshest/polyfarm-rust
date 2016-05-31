@@ -1,6 +1,10 @@
+// ------------------------------------------------------------------------------------------------
+// main.rs
+// ------------------------------------------------------------------------------------------------
 extern crate getopts;
 extern crate num;
 extern crate rand;
+extern crate time;
 
 mod polyomino;
 
@@ -75,7 +79,7 @@ fn main() {
     let cell_side = get_num("c", "10");    
     let elites = get_num("e", "1");
     let mut_percentage = get_num("p", "90");
-    let mut_attempts = get_num("a", "100");
+    let mut_attempts = get_num("a", "1000");
         
     println!("gen_size: {}, seed: {}, max_iter: {}, elites: {},\
         mut_percentage: {}, mut_attempts: {}, cell_side: {}, output file: {}", 

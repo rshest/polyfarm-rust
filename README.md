@@ -2,8 +2,9 @@ Random search solver for a "polyomino farm" problem:
 
 *Given a set of polyominoes, arrange them such that they enclose the largest area possible.*
 
-Written in Rust. Generates HTML/SVGs visualizing the results.
+Written as a Rust learning exercise. 
 
+Generates HTML/SVGs visualizing the results.
 
 Example solutions for tetrominoes:
 

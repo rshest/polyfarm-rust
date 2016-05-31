@@ -1,9 +1,13 @@
+// ------------------------------------------------------------------------------------------------
+// farm.rs
+// ------------------------------------------------------------------------------------------------
 use std::f64;
 use std::f64::consts::{PI};
 use std::fs::File;
 use std::io::prelude::*;
 use std::cmp;
 use rand::{Rng, SeedableRng, StdRng};
+use time::{PreciseTime};
 
 use polyomino::shape::{Shape};
 use polyomino::layout::{Layout, Bundle, COFFS};
@@ -72,6 +76,8 @@ impl<'a> Farm<'a> {
         let mut gen1 = vec![Layout::new(&self.bundle); self.gen_size]; 
         let mut scores = vec![];
         
+        let mut start_time = PreciseTime::now();
+        
         //  seed the first generation
         for k in 0..self.gen_size {
             let mut layout = &mut gen0[k];
@@ -95,7 +101,10 @@ impl<'a> Farm<'a> {
             }
             
             scores.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
-            println!("Iteration: {}, max score: {}", it, scores[0].score);
+            let cur_time = PreciseTime::now();
+            println!("Iteration: {}, max score: {}, time: {}ms", 
+                it, scores[0].score, start_time.to(cur_time).num_milliseconds());
+            start_time = cur_time;
             self.dump_layouts(&scores, prev_gen);
             if it >= self.max_iter { break; }
               
