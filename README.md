@@ -18,6 +18,8 @@ Hexominoes:
 
 ![](doc/hexomino-1583.png)
 
+[Reference C++ implementation](https://github.com/silverio/polyfarm-cpp)
+
 
 
 
