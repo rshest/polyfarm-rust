@@ -1,10 +1,8 @@
 ## Purpose
 
-Random search solver for a "polyomino farm" problem: 
+Random search solver for a "polyomino farm" problem, written as a Rust learning exercise. 
 
-Written as a Rust learning exercise. 
-
-Generates HTML/SVGs visualizing the results.
+Generates HTML/SVG files visualizing the results at every optimization step.
 
 
 ## The problem
@@ -25,18 +23,49 @@ $ cargo run
 
 Cargo will take care of downloading the needed dependencies and running the program.
 
-The intermediate results will be dumped into the file `output.html`.
+Intermediate results will be dumped into the file `output.html`.
+
+
+## Command line options
+
+The program can take additional options, which can be passed through cargo like this:
+
+```bash
+$ cargo run -- --seed 42
+```
+
+The possible options are:
+
+```
+    -h, --help          print the help text
+    -m, --no-mirror     don't mirror the shapes
+    -r, --no-rotation   don't rotate the shapes
+    -o, --output FILE   output HTML file path
+    -s, --seed NUMBER   random seed
+    -g, --gen-size NUMBER
+                        generation size
+    -n, --max-iter NUMBER
+                        maximum iteration
+    -e, --elites NUMBER number of elites to preserve between generations
+    -c, --cell-side NUMBER
+                        SVG cell side, pixels
+    -p, --mut-percentage NUMBER%
+                        percentage of generation to mutate
+    -a, --mut-attempts NUMBER
+                        mutation attempts per gene
+
+```
 
 
 ## Example solutions for tetrominoes:
 
 ![](doc/tetromino-9.png)
 
-Pentominoes:
+### Pentominoes:
 
 ![](doc/pentomino-128.png)
 
-Hexominoes:
+### Hexominoes:
 
 ![](doc/hexomino-1583.png)
 
