@@ -31,7 +31,7 @@ Intermediate results will be dumped into the file `output.html`.
 The program can take additional options, which can be passed through cargo like this:
 
 ```bash
-$ cargo run -- --seed 42
+$ cargo run -- --seed 42 <shape file path>
 ```
 
 The possible options are:
@@ -56,8 +56,16 @@ The possible options are:
 
 ```
 
+The shape file is a text file describing allowed shape types, see examples in the `data` folder.
 
-## Example solutions for tetrominoes:
+If no file is specified, it defaults to the pentomino one.
+
+
+## Example solutions:
+
+Here are a few example outputs for different shape types
+
+### Tetrominoes:
 
 ![](doc/tetromino-9.png)
 
